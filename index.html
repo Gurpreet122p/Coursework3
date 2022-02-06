@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Courswork 1 Gur Preet Singh Kaur</title>
+
+    <!-- Vue development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <!-- Font=Awesome library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <!-- Lesson objects
+    <script src="assets/lessons.js"></script> -->
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="./assets/design.css">
+    <!-- Manifest -->
+    <link rel="manifest" href="https://raw.githubusercontent.com/Gurpreet122p/Coursework2/main/manifest.webmanifest">
+
+</head>
+
+<body>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        };
+    </script>
+
+    <div id="app">
+
+        <div v-if='showProduct'>
+            <!-- product page code -->
+
+            <header>
+                <button v-on:click='showCheckout' v-if="this.cart.length">
+                {{this.cart.length}}
+                <span class="fas fa-shopping-cart"></span> Checkout
+            </button>
+            </header>
+            <!-- Sorting Options -->
+            <div id="sort">
+                <p>Sort by</p>
+                <div v-for="(selectedValue, key) in sorting">
+
+                    <input type="radio" id="key" name="key" value="selectedValue" v-on:click='sortBy(selectedValue)'>
+                    <label for="key"> {{key}}</label><br>
+                </div>
+
+                <p>
+                    <strong>Order:</strong>
+                    <select v-model="orderAscending">
+                    <option disabled value="">Order By</option>
+                    <option v-for="(selectedValue, key) in userOrder" v-on:change='ss' v-bind:value="selectedValue">
+                        {{selectedValue}}
+                </select>
+                </p>
+            </div>
+
+            <!-- Searching Options -->
+            <div id="search">
+                <input placeholder="Search..." type="text" v-model="search"> {{filteredLessons}}
+            </div>
+
+            <div class="contain">
+                <div class="prod_box" v-for="lesson in lessons">
+                    <!-- lesson information -->
+                    <h2 v-text="lesson.subject"> </h2>
+                    <img v-bind:src="lesson.image" height="125">
+                    <p v-text="lesson.location"> </p>
+                    <p>Price:£{{lesson.price}}</p>
+                    <p>Available:{{lesson.availableInventory}}</p>
+                    <!-- Font Awesome generated icons -->
+                    <div>
+                        <span v-for='n in lesson.rating'><i class="fas fa-star"></i></span>
+                        <span v-for='n in 5-lesson.rating'><i class="far fa-star"></i></span>
+
+                    </div>
+                    <!-- Button for adding lesson to cart -->
+                    <button v-on:click='addToCart(lesson)' v-if='lesson.availableInventory'>
+                    Add to cart
+                    </button>
+                    <!-- Disable Button for adding lesson to cart when required-->
+                    <button disabled='disabled' v-else>
+                        Add to cart
+                    </button>
+                    <span v-if='lesson.availableInventory < 1'>
+                        All out!
+                    </span>
+                    <span v-else-if="lesson.availableInventory  < 5 ">
+                        Only {{lesson.availableInventory }} left!
+                    </span>
+                    <span v-else>Buy Now</span>
+                </div>
+            </div>
+        </div>
+        <!-- Finish Div for showing lessons -->
+
+        <div v-else>
+            <!-- checkout page code -->
+            <!-- Button appears in checkout page to go back to lessons page -->
+            <button v-on:click='showCheckout'>
+                <span  class="fas fa-arrow-left"></span> Go Back
+            </button>
+
+            <!-- Basket code to diplay products in basket-->
+            <h2> Your Basket </h2>
+            <div class="contain">
+                <div class="prod_box" v-for="item in cart">
+                    <p v-text="item.lessons.subject"> </p>
+                    <img v-bind:src="item.lessons.image" height="50">
+                    <p v-text="item.lessons.location"> </p>
+                    <p>Price: {{item.lessons.price}}</p>
+                    <button v-on:click="deleteFromCart(item)">
+                    remove
+                </button>
+                </div>
+            </div>
+
+            <!--diplay checkout inputs for user-->
+            <div id="checkout">
+                <h2> Checkout</h2>
+
+                <form action="https://gurpreet122p.github.io/Coursework1/" method="GET" onchange="return checkData()" name="signup">
+                    <br /><br />Name:
+                    <input name="NAME" type="text" id="NAME" v-model="OrderName" />
+                    <br /><br /> Phone Number:
+                    <input name="PHONE" type="text" id="PHONE" v-model="OrderPhone" />
+                    <input @click="submitForm()" v-bind:disabled='formIsNotCorrect' id="Button" type="submit" value="Place Order">
+                </form>
+            </div>
+        </div>
+
+    </div>
+    <!-- Stop app div -->
+
+</body>
+
+</html>
+
+<script>
+    let app = new Vue({
+
+        el: '#app',
+        data: {
+            search: '',
+            userOrder: {
+                a: 'Ascending',
+                b: 'Descending'
+            },
+            formIsNotCorrect: true,
+            userSelection: '',
+            OrderName: '',
+            cartLessonsID: [],
+            cartLessonsCounter: [],
+            OrderPhone: '',
+            searchResult: [],
+            lessons: [],
+            orderAscending: '',
+            // lessons: allLessons,
+            sorting: {
+                Price: 'price',
+                Subject: 'subject',
+                Location: 'location',
+                Availability: 'availableInventory'
+            },
+            showProduct: true,
+            cart: [] // array to store items in shopping cart
+        },
+        methods: {
+            showCheckout() {
+                this.showProduct = this.showProduct ? false : true;
+            },
+            addToCart: function(lessons) {
+
+                /*
+                for (let i = 0; i < this.cart.length ; i++) {
+                    //console.log(JSON.stringify(this.cart[i].tmpLessonID))
+                    this.cartLessonsID.push(this.cart[i].tmpLessonID)
+                }
+                this.cartLessonsID.forEach((value, index) => {
+
+                    console.log(value);
+                    console.log(index);
+                });
+*/
+
+                /* for (let i = 0; i < this.cart.length ; i++) {
+                    //console.log(JSON.stringify(this.cart[i].tmpLessonID))
+                    // this.cartLessonsID.push(this.cart[i].tmpLessonID)
+                    let lessonID =  this.cart[i].tmpLessonID
+                    let counter =    this.cartCount(this.cart[i].tmpLessonID)
+
+                    if (this.cart.find.tmpLessonID === this.cartLessonsID.find.lessonID) {
+                        console.log('value found ')
+
+                        this.cartLessonsID.push({
+                            lessonID,
+                            counter
+                        })
+                    } else {
+                        console.log('value NOT found ')
+
+                    }
+
+                    this.cartLessonsID.push({
+                        lessonID,
+                        counter
+                    })
+                }
+            */
+
+                let tmpLessonID = lessons.id
+
+                //   console.log(JSON.stringify(this.lessons[2].id))
+                function ifCanAdd(item) {
+                    if (item.id == lessons.id) {
+                        lessons.availableInventory -= 1;
+                        return item;
+                    }
+                }
+                this.lessons.find(ifCanAdd);
+                this.cart.push({
+                    cartId: (this.cart.length + 1),
+                    lessons,
+                    tmpLessonID
+                })
+
+
+            },
+            deleteFromCart: function(lesson) {
+                this.cart = this.cart.filter(item => item.cartId != lesson.cartId)
+
+                function ifCan(item) {
+                    if (item.id == lesson.lessons.id) {
+                        console.log("adding " + item.id)
+                        item.availableInventory += 1
+                    }
+                }
+                this.lessons.find(ifCan)
+            },
+            submitForm() {
+
+
+                for (let s = 0; s < this.lessons.length; s++) {
+                    let lessonID = this.lessons[s].id
+
+
+                    let spaces = this.cartCount(lessonID)
+                    if (spaces > 0) {
+                        var localApp = this;
+                        this.cartLessonsID.push({
+                            lessonID
+
+                        })
+                        this.cartLessonsCounter.push({
+                            spaces
+                        })
+                    }
+
+                }
+
+
+
+                fetch('https://coursework2.herokuapp.com/collection/Order', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "LessonID": this.cartLessonsID,
+                        "Name": this.OrderName,
+                        "Phone": this.OrderPhone,
+                        "Spaces": this.cartLessonsCounter
+
+                    }),
+                })
+
+
+                for (let i = 0; i < this.cartLessonsID.length; i++) { //Loop for every lesson that is sent to the database
+
+                    for (let s = 0; s < this.lessons.length; s++) { //Loop for every lesson available
+                        let lessonID = this.lessons[s].id
+
+
+
+                        if (lessonID === this.cartLessonsID[i].lessonID) {
+                            var availableSpace = this.lessons[s].availableInventory // - this.cartLessonsCounter[i].counter
+
+                            var tmpLessonID = this.cartLessonsID[i].lessonID
+                            console.log(tmpLessonID + 'This is the TEMPORARY LESSONS ID ')
+
+                            fetch('https://coursework2.herokuapp.com/update/Lessons/' + lessonID, {
+                                method: 'PUT',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    "availableInventory": availableSpace
+                                }),
+                            })
+
+                        }
+
+                    }
+
+
+                }
+
+                alert('Order Submitted Successfully!')
+
+                document.location.reload(true)
+
+            },
+            canAddToCart(lessons) {
+                return lessons.availableInventory > this.cartCount(lessons.id)
+            },
+            cartCount(id) {
+                let count = 0;
+                for (let i = 0; i < this.cart.length; i++) {
+                    if (this.cart[i].lessons.id === id)
+                        count++;
+                }
+                return count;
+            },
+            sortBy(scenario) {
+                if (scenario === "price") {
+                    function compare(a, b) {
+                        if (a.price > b.price) return 1;
+                        if (a.price < b.price) return -1;
+                        return 0;
+                    }
+                    this.orderAscending = "Descending"
+                    return this.lessons.sort(compare);
+                } else if (scenario === "availableInventory") {
+                    function compare(a, b) {
+                        if (a.availableInventory > b.availableInventory) return 1;
+                        if (a.availableInventory < b.availableInventory) return -1;
+                        return 0;
+                    }
+                    this.orderAscending = "Descending"
+                    return this.lessons.sort(compare);
+                } else if (scenario === "location") {
+                    function compare(a, b) {
+                        if (a.location > b.location) return 1;
+                        if (a.location < b.location) return -1;
+                        return 0;
+                    }
+                    this.orderAscending = "Descending"
+                    return this.lessons.sort(compare);
+                } else if (scenario === "subject") {
+                    function compare(a, b) {
+                        if (a.subject > b.subject) return 1;
+                        if (a.subject < b.subject) return -1;
+                        return 0;
+                    }
+                    this.orderAscending = "Descending"
+                    return this.lessons.sort(compare);
+                }
+            }
+
+        },
+        computed: {
+
+
+
+            ss() {
+                if (this.orderAscending === "Ascending") {
+
+                    this.orderAscending = "Ascending"
+
+                    return this.lessons.reverse();
+
+                } else if (this.orderAscending === "Descending") {
+                    this.orderAscending = "Descending"
+                    return this.lessons.reverse();
+
+                } else {
+                    return this.lessons;
+                }
+
+
+            },
+            sortedLessons() {
+
+                function compare(a, b) {
+                    if (a.userSelection > b.userSelection) return 1;
+                    if (a.userSelection < b.userSelection) return -1;
+                    return 0;
+                }
+                return this.lessons.sort(compare);
+
+            },
+            filteredLessons() {
+
+
+
+                var localApp = this;
+
+
+                if (!this.search) {
+                    // IF There is nothing in the search bar then retrieve all lessons otherwise perform search query
+                    fetch('https://coursework2.herokuapp.com/collection/Lessons', {
+                            method: 'GET'
+                        })
+                        .then(function(response) {
+                            if (response.ok) {
+                                console.log('Successfully fetched the Data')
+                            } else {
+                                console.log('Error fetching data')
+                            }
+
+                            return response.json();
+                        })
+                        .then(function(json) {
+                            // use the json
+                            console.log(json)
+                            localApp.lessons = json;
+
+                        }).catch(function(error) {
+                            //Handle error
+                            console.log(error);
+                        });
+                } else {
+
+
+                    fetch('https://coursework2.herokuapp.com/Search/Lessons/?search=' + this.search + '', {
+                            method: 'GET'
+                        })
+                        .then(function(response) {
+                            if (response.ok) {
+                                console.log('Success')
+                            } else {
+                                console.log('Error fetching data')
+                            }
+
+                            return response.json();
+                        })
+                        .then(function(json) {
+
+                            console.log(json)
+                            localApp.lessons = json;
+
+                        })
+
+                }
+
+
+                // return this.lessons
+
+
+
+
+
+
+
+
+                //   return this.lessons.filter(item =>
+                //                    item.subject.toLowerCase().includes(this.search.toLowerCase()) || item.location.toLowerCase().includes(this.search.toLowerCase()))
+            }
+
+        },
+        created: function() { //Vue lifecycle hook, called when data is loaded.
+
+            this.filteredLessons;
+
+        }
+    });
+</script>
+
+
+<script type="application/javascript">
+    function checkData() {
+        //regex expression:
+        var phoneRegex = /^[0-9]*$/;
+        var nameRegex = /^[a-zA-Z]*$/;
+        var name = document.signup.NAME.value;
+        var phone = document.signup.PHONE.value;
+
+
+        var phoneResult = phoneRegex.test(phone);
+        var nameResult = nameRegex.test(name);
+
+
+        if (!phoneResult) {
+            alert("Please fill in your Phone Number with numbers only.")
+            document.signup.PHONE.focus()
+            document.getElementById("Button").disabled = true;
+            return false;
+        }
+        if (!nameResult) {
+            alert("Please fill in your Name with letters only.")
+            document.signup.NAME.focus()
+            document.getElementById("Button").disabled = true;
+            return false;
+        }
+
+        if (document.signup.NAME.value == "") {
+            alert("Please fill in your name.")
+            document.signup.NAME.focus()
+            return false;
+        }
+        if (document.signup.NAME.value.length < 5) {
+            alert("Please fill in your name with at least 5 letters.")
+            document.signup.NAME.focus()
+            return false;
+        }
+        if (document.signup.PHONE.value == "") {
+            alert("Please fill in your PHONE.")
+            document.signup.PHONE.focus()
+            return false;
+        }
+        if (document.signup.PHONE.value.length < 5) {
+            alert("Please fill in your phone with at least 11 numbers.")
+            document.signup.PHONE.focus()
+            return false;
+        } else {
+            document.getElementById("Button").disabled = false;
+            return true;
+        }
+    }
+</script>
